@@ -1,0 +1,6 @@
+17:24 10/01/23, ./, CREATE, aasdfasdf.asf
+17:25 10/01/23, ./, CREATE, .aasdfasdf.asf.swp
+17:25 10/01/23, ./, CREATE, .aasdfasdf.asf.swx
+17:25 10/01/23, ./, CREATE, .aasdfasdf.asf.swp
+17:25 10/01/23, ./, CREATE, 4913
+17:25 10/01/23, ./, CREATE, aasdfasdf.asf

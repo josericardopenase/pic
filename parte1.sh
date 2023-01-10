@@ -42,14 +42,9 @@ then
 fi
 
 #usamos el comando inotifywait de inotify para realizar acciones cada vez que haya un cambio en el directorio en segundo plano.
-inotifywait -m $1 -e create | while read DIRECTORY EVENT FILE; do
+inotifywait -m $1 -e create,modify | while read DIRECTORY EVENT FILE; do
 	DATE=$(date +"%H:%M %d/%m/%y")
 	echo $DATE, $DIRECTORY, $EVENT, $FILE >> $2
 done & 
 
 echo "Changes observer initialized with PID: $!"
-
-
-
-
-

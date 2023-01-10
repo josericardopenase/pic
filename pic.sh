@@ -1,6 +1,5 @@
-#!/bin/bash
-
-#  Monitorización de cambios en tiempo real (icron/inotify):
+#!/bin/bash 
+#  monitorización de cambios en tiempo real (icron/inotify):
 #	un script que reciba como argumento uno o varios directorios. Sobre cada directorio, mediante
 #	inotify se detectarán las modificaciones en todos sus ficheros, que se irán guardando en una carpeta
 #	".versiones" del directorio. La versión del archivo A se guardará como
@@ -44,8 +43,9 @@ base_help(){
 	echo " 	init	Create a control version repository"
 	echo "	watch 	Make the control version work in current directory"
 	echo "	log 	Show the changes history of the directory"
-	echo "	recover Recover the state of a file in a given date"
-	echo "	goto 	Recover the state of the directory in a given date"
+	echo "	status 	See changes in the directory"
+	echo "	snap 	Create a snapshot with current changes"
+	echo "	goto 	Recover the state of the directory in a given snapshot"
 	echo "	help 	get help with a concrete command"
 	echo ""
 	echo "You can use pic --help or pic --version to get additional information"
@@ -80,9 +80,9 @@ help(){
 			echo ""
 			echo "Usage:"
 			echo ""
-			echo "	pic watch [repository]"
+			echo "	pic watch"
 			echo ""
-			echo "If a repository is not given will watch in current directory"
+			echo "By default gets the current directory"
 		;;
 		log )
 			echo "Manual of log:"
@@ -102,7 +102,7 @@ help(){
 			echo ""
 			echo "Description:"
 			echo ""
-			echo "Recover brings back a file of the current directory to its state in a given date"
+			echo "Recover brings back a file of the current directory to the state of a snapshot"
 			echo ""
 			echo "Usage:"
 			echo ""
@@ -116,11 +116,37 @@ help(){
 			echo ""
 			echo "Description:"
 			echo ""
-			echo "Change the current directory state to a past dated state"
+			echo "Change the current directory state to a past snapshot"
 			echo ""
 			echo "Usage:"
 			echo ""
 			echo "	pic goto <file> <date>"
+			echo ""
+			echo "The current directory must be a pic repository."
+		;;
+		snap )
+			echo "Manual of snap:"
+			echo ""
+			echo "Description:"
+			echo ""
+			echo "Create a snapshot with the changes of the directory"
+			echo ""
+			echo "Usage:"
+			echo ""
+			echo "	pic snap [-m <message>]"
+			echo ""
+			echo "The current directory must be a pic repository."
+		;;
+		status )
+			echo "Manual of status:"
+			echo ""
+			echo "Description:"
+			echo ""
+			echo "See the current changes in the directory"
+			echo ""
+			echo "Usage:"
+			echo ""
+			echo "	pic status"
 			echo ""
 			echo "The current directory must be a pic repository."
 		;;
@@ -140,7 +166,7 @@ is_repository_error(){
 is_not_repository_error(){
 	if [[ ! -d $1/.pic ]]
 	then
-		error "$1 not a pic repository"
+		error "$1 is not a pic repository"
 	fi
 }
 
@@ -149,23 +175,38 @@ init(){
 	is_repository_error $repo
 	mkdir $repo/.pic
 	mkdir $repo/.pic/versions
-	touch $repo/.pic/logs.txt
+	touch $repo/.pic/logs
+	touch $repo/.pic/snap
 	echo "Initialized a pic repository in $repo"
 }
 
 watch(){
-	is_not_repository_error $1
-	inotifywait -m $repo -e create,modify | while read DIRECTORY EVENT FILE; do
-	        DATE=$(date +"%H:%M %d/%m/%y")
-		        echo $DATE, $DIRECTORY, $EVENT, $FILE >> $1/.pic/logs.txt
+	is_not_repository_error .
+	inotifywait -m . -e create,modify | while read DIRECTORY EVENT FILE; do
+			DATE=$(date +"%H-%M-%d-%m-%y")
+			echo $DATE:$DIRECTORY:$EVENT:$FILE >> ./.pic/snap
 			#copy the file inside ./.pic/versions/
 		done &
 	echo "Started watching changes in $repo with PID: $!"
 }
 
+snap(){
+	is_not_repository_error .
+	#implement -file optional parameter
+	echo "Created a snap"
+}
+
+status(){
+
+	is_not_repository_error .
+	#implement -file optional parameter
+	echo "The changes of the directory are:"
+	cat ./.pic/snap
+}
+
 log(){
 	#implement -file optional parameter
-	cat ./.pic/logs.txt
+	cat ./.pic/logs
 }
 
 goto(){
@@ -184,10 +225,16 @@ case "$1" in
 		base_help
 	;;
 	watch )
-		watch $2
+		watch
 	;;
 	log )
 		log
+	;;
+	snap )
+		snap
+	;;
+	status )
+		status
 	;;
 	goto )
 		goto
