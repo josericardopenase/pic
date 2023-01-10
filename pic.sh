@@ -15,7 +15,7 @@
 #		watch 	Make the control version work in current directory
 #		log 	Show the changes history of the directory
 #		snap 	Create a snapshot of the current version of the directory
-#		recover Recover version from a concete snapshot
+#		goto Recover version from a concete snapshot
 #
 
 error(){
@@ -182,22 +182,27 @@ init(){
 
 watch(){
 	is_not_repository_error .
-	inotifywait -m . -e create,modify | while read DIRECTORY EVENT FILE; do
+	inotifywait -m . -e create,modify,delete | while read DIRECTORY EVENT FILE; do
 			DATE=$(date +"%H-%M-%d-%m-%y")
 			echo $DATE:$DIRECTORY:$EVENT:$FILE >> ./.pic/snap
-			#copy the file inside ./.pic/versions/
 		done &
 	echo "Started watching changes in $repo with PID: $!"
 }
 
 snap(){
 	is_not_repository_error .
-	#implement -file optional parameter
+	#1. leer del archivo ./.pic/snap
+	#2. sacar una lista de los archivos que sean creado, modificado, etc... cat ./.pic/snap | cut -d: -f4 | sort -u
+	#3. crear un gzip comprimido con esos archivos (el nombre debe ser el formato fecha del enunciado) y guardarlo en el directorio ./.pic/versions
+	#4. escribir en el ./.pic/log el commit al estilo git log.
+	#5. vaciar el ./.pic/snap
+	#6. mostrar un mensaje por la consola del snap creado y su ID
+
+	#OPCIONAL: poner un -m con mensaje
 	echo "Created a snap"
 }
 
 status(){
-
 	is_not_repository_error .
 	#implement -file optional parameter
 	echo "The changes of the directory are:"
@@ -210,10 +215,7 @@ log(){
 }
 
 goto(){
-	echo "Is not implemented yet"
-}
-
-recover(){
+	#queda por implementar
 	echo "Is not implemented yet"
 }
 
@@ -231,16 +233,13 @@ case "$1" in
 		log
 	;;
 	snap )
-		snap
+		snap 
 	;;
 	status )
 		status
 	;;
 	goto )
 		goto
-	;;
-	recover )
-		recover
 	;;
 	init )
 		init $2
