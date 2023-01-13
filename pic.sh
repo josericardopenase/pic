@@ -196,9 +196,11 @@ snap(){
 	#3. crear un gzip comprimido con esos archivos (el nombre debe ser el formato fecha del enunciado) y guardarlo en el directorio ./.pic/versions
 	DATE=$(date +%Y%m%d%H%M%S)
 	list=$(cat ./.pic/snap | cut -d: -f4 | sort -u | grep -v "^\.")
-	input=""
+	cat /dev/null > ./.pic/deletions
+	cat ./.pic/snap | cut -d: -f3,4 | grep '^DELETE'| cut -d: -f2 | sort -u >> ./.pic/deletions
+	input="./.pic/deletions"
 	for i in $list; do
-        	input="$input ../$i"
+        	input="$input $i"
         done
 	tar czf ./.pic/versions/$DATE.tgz $input 1 > /dev/null 2> /dev/null
 
@@ -219,9 +221,14 @@ snap(){
 	echo "Created a snap with ID: $DATE"
 	echo "	Files changed:"
 	for i in $list; do
-        	echo "	++$i"
+		aux=$(grep "$i" ./.pic/deletions)
+		if [ "$i" == "$aux" ]; then
+			echo "	  --"$i""
+  		else
+			echo "	  ++"$i""
+		fi
         done
-	echo "" > ./.pic/snap
+	cat /dev/null > ./.pic/snap
 }
 
 status(){
