@@ -191,20 +191,28 @@ watch(){
 
 snap(){
 	is_not_repository_error .
-	#1. leer del archivo ./.pic/snap
-	#2. sacar una lista de los archivos que sean creado, modificado, etc... cat ./.pic/snap | cut -d: -f4 | sort -u
-	#3. crear un gzip comprimido con esos archivos (el nombre debe ser el formato fecha del enunciado) y guardarlo en el directorio ./.pic/versions
+	
+	
+	# Se almacena la fecha de la captura y se obtiene la información  del fichero snap
 	DATE=$(date +%Y%m%d%H%M%S)
 	list=$(cat ./.pic/snap | cut -d: -f4 | sort -u | grep -v "^\.")
+	if [ -z "$list"]
+	then echo "No hay cambios que registrar"
+	exit 1
+	fi
+	
+	#Se obtiene la lista de ficheros borrados
 	cat /dev/null > ./.pic/deletions
 	cat ./.pic/snap | cut -d: -f3,4 | grep '^DELETE'| cut -d: -f2 | sort -u >> ./.pic/deletions
+
+	# Los archivos modificados se utilizan como parámetros del comando tar
 	input="./.pic/deletions"
 	for i in $list; do
         	input="$input $i"
         done
 	tar czf ./.pic/versions/$DATE.tgz $input 1 > /dev/null 2> /dev/null
 
-	#4. escribir en el ./.pic/log el commit al estilo git log.
+	# Se escribe en el ./.pic/log el snap y los archivos modificados
 	echo "========================================" >> ./.pic/logs
 	echo "Snap with ID: $DATE.tgz added to versions " >> ./.pic/logs
 	echo "	Files changed:" >> ./.pic/logs
@@ -212,12 +220,7 @@ snap(){
         	echo "	 ._$i" >> ./.pic/logs
         done
 
-	#5. vaciar el ./.pic/snap
-	#echo "" > ./.pic/snap	
-		
-	#6. mostrar un mensaje por la consola del snap creado y su ID
-
-	#OPCIONAL: poner un -m con mensaje
+	# Se muestra un mensaje por la consola del snap creado y su ID
 	echo "Created a snap with ID: $DATE"
 	echo "	Files changed:"
 	for i in $list; do
@@ -228,6 +231,7 @@ snap(){
 			echo "	  ++"$i""
 		fi
         done
+	# Se vacía el fichero snap
 	cat /dev/null > ./.pic/snap
 }
 
