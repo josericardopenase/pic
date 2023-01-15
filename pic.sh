@@ -194,11 +194,11 @@ snap(){
 	
 	
 	# Se almacena la fecha de la captura y se obtiene la información  del fichero snap
-	DATE=$(date +%Y%m%d%H%M%S)
+	DATE=$(date +%Y%m%d%H:%M:%S)
 	list=$(cat ./.pic/snap | cut -d: -f4 | sort -u | grep -v "^\.")
 	if [[ -z "$list" ]]
 	then echo "No hay cambios que registrar"
-	exit 1
+		exit 1
 	fi
 	
 	#Se obtiene la lista de ficheros borrados
@@ -214,7 +214,10 @@ snap(){
 	# Se escribe en el ./.pic/log el snap y los archivos modificados
 	echo "========================================" >> ./.pic/logs
 	echo "Snap with ID: $DATE.tgz added to versions " >> ./.pic/logs
-	echo "Snap Message: $pam" >> ./.pic/logs
+	if [[ $1 -eq "-m" ]]
+	then
+		echo "Snap Message: $2" >> ./.pic/logs
+	fi
 	echo "	Files changed:" >> ./.pic/logs
 	for i in $list; do
         	echo "	 ._$i" >> ./.pic/logs
@@ -222,7 +225,10 @@ snap(){
 
 	# Se muestra un mensaje por la consola del snap creado y su ID
 	echo "Created a snap with ID: $DATE"
-	echo "Snap Message: $pam" 
+	if [[ $1 -eq "-m" ]]
+	then
+		echo "Snap Message: $2"
+	fi
 	echo "	Files changed:"
 	for i in $list; do
 		aux=$(grep "$i" ./.pic/deletions)
@@ -249,41 +255,38 @@ log(){
 }
 
 goto(){
+	is_not_repository_error .
+
 	#Controlar que el snap existe
-	if [[ ! -f ".pic/versions/$pam.tgz" ]]
-		then 
-		echo "El ID del snap dado no existe"
-		exit 1
+	if [[ ! -f ".pic/versions/$1.tgz" ]]
+	then 
+		error "El ID del snap dado no existe"
 	fi
 
-	#Remove de files added after this snap from the directory(Cuando volvemos a un commit anterior, se quedan los archivos que hemos creado a 		posterior, hay que eliminarlos) 
-	#
-	
-		#APPROACH MIERDOSO
-		#Habria que guardar una lista de los archivos que no estan en el tar y que no queremos borrar
-		#fileSnap=$(tar -tf ".pic/versions/$pam.tgz")
-		#for file in $(ls -l | cut -d " " -f9 | tail -n 2)
-		#	do 
-		#	if [[ "$fileSNnp" != *"$file"* ]] ; 
-		#	then 
-		#		rm $file
-		#	fi
-		#done
+	find ./* -type f ! -iwholename "**/.pic/*" -exec rm {} \;
 
-		#APPROACH MÁS LOGICO
-		#El snap tiene una fecha como título
-		#Buscar con find o similar los archivos CREADOS despues de esa fecha 
-		#Eliminarlos
-		
-	###########################################################
+	echo "Comenzamos a recuperar el estado del directorio en  $1"
 
-	tar -xvf ".pic/versions/$pam.tgz" 
+	for file in $(find ./.pic/versions/ -type f -iname "*.tgz" | sort -n)
+	do
+		echo "Descomprimiendo $file"
+		tar -xf $file
+		if [[ $(echo $file | grep $1) ]]
+		then
+			break
+		fi
+	done
 	
 	#Remove de files written in ./.pic/deletions 
-	for file in $(cat .pic/deletions) 
-		do
-		rm $file
-	done
+	if [[ -f ./.pic/deletions ]]
+	then
+		for file in $(cat ./.pic/deletions) 
+			do
+			echo "Deleting $file"
+			rm $file
+		done
+	fi
+	echo "Recuperado con exito el estado a $1"
 	
 }
 
@@ -301,13 +304,13 @@ case "$1" in
 		log
 	;;
 	snap )
-		snap 
+		snap $2 $3
 	;;
 	status )
 		status
 	;;
 	goto )
-		goto
+		goto $2
 	;;
 	init )
 		init $2
